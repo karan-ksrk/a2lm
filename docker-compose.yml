@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+
+  # ── OMNI-LLM Gateway ────────────────────────────────────────────────────────
+  gateway:
+    build: .
+    container_name: omni-llm-gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Redis (rate limit state) ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: omni-llm-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Redis Commander (optional UI to inspect Redis keys) ─────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: omni-llm-redis-ui
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    profiles:
+      - debug   # only starts with: docker compose --profile debug up
+
+volumes:
+  redis_data:
