@@ -1,4 +1,4 @@
-# OMNI-LLM Gateway — MVP
+# A2LM Gateway — MVP
 
 Single OpenAI-compatible endpoint that routes across **Groq**, **OpenRouter**, and **Google AI Studio** with automatic fallback and rate-limit tracking.
 

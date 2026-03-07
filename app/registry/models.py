@@ -53,7 +53,7 @@ class ModelRegistry:
             for m in self._models.values()
             if m.is_active
         ] + [
-            {"id": alias, "object": "model", "owned_by": "omni-llm", "context_length": 131072}
+            {"id": alias, "object": "model", "owned_by": "a2lm", "context_length": 131072}
             for alias in ["auto", "fast", "smart"]
         ]
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick smoke test for the OMNI-LLM Gateway.
+Quick smoke test for the A2LM Gateway.
 Run AFTER the gateway is up: python test_gateway.py
 """
 
@@ -76,7 +76,7 @@ def test_chat_auto():
     separator("3. Chat Completion — model: auto")
     payload = {
         "model": "auto",
-        "messages": [{"role": "user", "content": "Say: hello from omni-llm"}],
+        "messages": [{"role": "user", "content": "Say: hello from a2lm"}],
         "max_tokens": 30,
     }
     r = httpx.post(f"{GATEWAY_URL}/v1/chat/completions", headers=headers, json=payload, timeout=30)
@@ -149,7 +149,7 @@ def test_auth_failure():
 
 
 if __name__ == "__main__":
-    print("\n🚀  OMNI-LLM Gateway Smoke Tests")
+    print("\n🚀  A2LM Gateway Smoke Tests")
     print(f"    Target: {GATEWAY_URL}")
     try:
         test_health()

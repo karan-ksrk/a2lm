@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="OMNI-LLM Gateway",
+    title="A2LM Gateway",
     description="Unified LLM API aggregating Groq, OpenRouter, Google AI Studio and more.",
     version="0.1.0-mvp",
     lifespan=lifespan,

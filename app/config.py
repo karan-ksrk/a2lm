@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     gateway_api_key: str = "dev-key"
 
     # DB & Redis
-    database_url: str = "postgresql+asyncpg://omnillm:omnillm@postgres:5432/omnillm"
+    database_url: str = "postgresql+asyncpg://a2lm:a2lm@postgres:5432/a2lm"
     redis_url: str = "redis://redis:6379/0"
 
     # Provider keys (single or comma-separated for rotation)

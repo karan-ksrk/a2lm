@@ -26,8 +26,8 @@ class OpenRouterAdapter(BaseProviderAdapter):
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/omni-llm-gateway",
-            "X-Title": "OMNI-LLM Gateway",
+            "HTTP-Referer": "https://github.com/a2lm-gateway",
+            "X-Title": "A2LM Gateway",
         }
 
     def get_chat_url(self) -> str:

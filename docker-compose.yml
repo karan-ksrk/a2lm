@@ -2,10 +2,10 @@ version: "3.9"
 
 services:
 
-  # ── OMNI-LLM Gateway ────────────────────────────────────────────────────────
+  # ── A2LM Gateway ────────────────────────────────────────────────────────────
   gateway:
     build: .
-    container_name: omni-llm-gateway
+    container_name: a2lm-gateway
     ports:
       - "8080:8080"
     env_file:
@@ -23,7 +23,7 @@ services:
   # ── Redis (rate limit state) ─────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: omni-llm-redis
+    container_name: a2lm-redis
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
       - redis_data:/data
@@ -37,7 +37,7 @@ services:
   # ── Redis Commander (optional UI to inspect Redis keys) ─────────────────────
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: omni-llm-redis-ui
+    container_name: a2lm-redis-ui
     environment:
       - REDIS_HOSTS=local:redis:6379
     ports:
