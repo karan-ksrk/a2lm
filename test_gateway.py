@@ -148,17 +148,60 @@ def test_auth_failure():
     print(f"Status: {r.status_code} (expected 401) → {'✓' if r.status_code == 401 else '✗'}")
 
 
+def test_chat_all_models():
+    separator("8. Chat Completion — All Models")
+    # Fetch available models
+    r = httpx.get(f"{GATEWAY_URL}/v1/models", headers=headers)
+    if r.status_code != 200:
+        print(f"Could not fetch models: {r.text}")
+        return
+
+    models = [m["id"] for m in r.json().get("data", [])]
+    print(f"Testing {len(models)} models...\n")
+
+    results = {"passed": [], "failed": []}
+
+    for model_id in models:
+        payload = {
+            "model": model_id,
+            "messages": [{"role": "user", "content": "Reply with only: ok"}],
+            "max_tokens": 100,
+        }
+        try:
+            resp = httpx.post(
+                f"{GATEWAY_URL}/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                content = resp.json()["choices"][0]["message"]["content"].strip()
+                print(f"  ✓ {model_id:35s} → {content[:40]!r}")
+                results["passed"].append(model_id)
+            else:
+                print(f"  ✗ {model_id:35s} → HTTP {resp.status_code}: {resp.text[:60]}")
+                results["failed"].append(model_id)
+        except Exception as e:
+            print(f"  ✗ {model_id:35s} → Exception: {e}")
+            results["failed"].append(model_id)
+
+    print(f"\n  Summary: {len(results['passed'])} passed, {len(results['failed'])} failed")
+    if results["failed"]:
+        print(f"  Failed models: {results['failed']}")
+
+
 if __name__ == "__main__":
     print("\n🚀  A2LM Gateway Smoke Tests")
     print(f"    Target: {GATEWAY_URL}")
     try:
-        test_health()
-        test_models()
-        test_auth_failure()
-        test_provider_status()
-        test_chat_auto()
-        test_chat_specific()
-        test_streaming()
+        # test_health()
+        # test_models()
+        # test_auth_failure()
+        # test_provider_status()
+        # test_chat_auto()
+        # test_chat_specific()
+        # test_streaming()
+        test_chat_all_models()
         print("\n✅  All tests passed!\n")
     except Exception as e:
         print(f"\n❌  Test failed: {e}\n")

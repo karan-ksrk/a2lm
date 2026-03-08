@@ -31,6 +31,8 @@ class RoutingEngine:
             "groq":             self._build_pool("groq"),
             "openrouter":       self._build_pool("openrouter"),
             "google_ai_studio": self._build_pool("google_ai_studio"),
+            "cerebras":         self._build_pool("cerebras"),
+
         }
 
     def _build_pool(self, provider_id: str) -> list[tuple[str, str]]:

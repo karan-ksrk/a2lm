@@ -15,11 +15,13 @@ class Settings(BaseSettings):
     groq_api_keys: str = ""
     openrouter_api_keys: str = ""
     google_ai_studio_api_keys: str = ""
+    cerebras_api_keys: str = ""
 
     # Compat: allow single-key env vars too
     groq_api_key: str = ""
     openrouter_api_key: str = ""
     google_ai_studio_api_key: str = ""
+    cerebras_api_key: str = ""
 
     log_level: str = "INFO"
 

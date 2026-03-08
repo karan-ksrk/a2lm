@@ -19,6 +19,21 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+    develop:
+      watch:
+        # sync source code without rebuild
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .git/
+            - __pycache__/
+            - node_modules/
+
+        # rebuild container if dependencies change
+        - action: rebuild
+          path: requirements.txt
+    
 
   # ── Redis (rate limit state) ─────────────────────────────────────────────────
   redis:

@@ -17,12 +17,19 @@ PROVIDER_LIMITS = {
     },
     "google_ai_studio": {
         "gemini-2.5-flash":     {"rpm": 5,  "daily": 20},
-        "gemini-2.5-flash-lite":{"rpm": 10, "daily": 20},
+        "gemini-2.5-flash-lite": {"rpm": 10, "daily": 20},
         "gemma-3-27b-it":       {"rpm": 30, "daily": 14400},
         "gemma-3-12b-it":       {"rpm": 30, "daily": 14400},
         "gemma-3-4b-it":        {"rpm": 30, "daily": 14400},
         "gemma-3-1b-it":        {"rpm": 30, "daily": 14400},
         "_default":             {"rpm": 10, "daily": 1000},
+    },
+    "cerebras": {
+        "llama-3.3-70b":    {"rpm": 30, "daily": 14400},
+        "llama-3.1-8b":     {"rpm": 30, "daily": 14400},
+        "qwen-3-235b":      {"rpm": 30, "daily": 14400},
+        "qwen-3-32b":       {"rpm": 30, "daily": 14400},
+        "_default":         {"rpm": 30, "daily": 14400},
     },
 }
 

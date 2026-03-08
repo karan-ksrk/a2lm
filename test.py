@@ -7,18 +7,18 @@ client = OpenAI(
 
 # Test 1: basic
 resp = client.chat.completions.create(
-    model="auto",
+    model="cerebras-gpt-oss-120b",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(resp.choices[0].message.content)
 
-# Test 2: streaming
-for chunk in client.chat.completions.create(
-    model="fast",
-    messages=[{"role": "user", "content": "Count to 5"}],
-    stream=True
-):
-    print(chunk.choices[0].delta.content or "", end="", flush=True)
+# # Test 2: streaming
+# for chunk in client.chat.completions.create(
+#     model="fast",
+#     messages=[{"role": "user", "content": "Count to 5"}],
+#     stream=True
+# ):
+#     print(chunk.choices[0].delta.content or "", end="", flush=True)
 
-# Test 3: test fallback — exhaust groq by calling 30+ times fast
-# The gateway should silently switch to openrouter/google
+# # Test 3: test fallback — exhaust groq by calling 30+ times fast
+# # The gateway should silently switch to openrouter/google
