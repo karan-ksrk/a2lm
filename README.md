@@ -37,6 +37,14 @@ Gateway starts at **http://localhost:8080**
 
 ---
 
+## Documentation
+
+Complete project documentation is available in:
+
+- [docs/README.md](docs/README.md)
+
+---
+
 ## Usage
 
 ### With OpenAI Python SDK (drop-in replacement)
