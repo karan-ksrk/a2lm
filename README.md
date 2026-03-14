@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="A2LM Logo" width="180" />
+  <img src="logo.png" alt="A2LM Logo" width="320" />
 </p>
 
 # A2LM Gateway — MVP
