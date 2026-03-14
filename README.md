@@ -2,81 +2,121 @@
   <img src="logo.png" alt="A2LM Logo" width="320" />
 </p>
 
-# A2LM Gateway — MVP
+# A2LM Gateway
 
-Single OpenAI-compatible endpoint that routes across **Groq**, **OpenRouter**, **Google AI Studio**, and **Cerebras** with automatic fallback and rate-limit tracking.
+OpenAI-compatible LLM gateway with quota-aware and health-aware routing across multiple providers.
 
----
+## Features
 
-## Quick Start
+- Single OpenAI-compatible endpoint: `POST /v1/chat/completions`
+- Multi-provider routing with fallback across 8 providers
+- Provider health and latency aware scoring (not just static priority)
+- Redis-backed per-token RPM and daily quota tracking
+- Circuit breaker for unstable providers
+- Streaming and non-streaming responses
+- Gateway model aliases: `auto`, `fast`, `smart`
+- API key auth for all `/v1/*` endpoints
 
-### Step 1 — Get your free API keys
+## Supported Providers
 
-| Provider | URL | Notes |
-|---|---|---|
-| **Groq** | https://console.groq.com | Free, instant signup |
-| **OpenRouter** | https://openrouter.ai | Free tier: 50 req/day |
-| **Google AI Studio** | https://aistudio.google.com | Click "Get API Key" top-right |
-| **Cerebras** | https://cloud.cerebras.ai | Get API key from account settings |
+- Groq
+- OpenRouter
+- Google AI Studio
+- Cerebras
+- Cloudflare Workers AI
+- Cohere
+- Mistral
+- NVIDIA NIM
 
-### Step 2 — Configure environment
+## Quick Start (Docker)
+
+### 1) Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env and paste your keys:
-#   GROQ_API_KEY=gsk_...
-#   OPENROUTER_API_KEY=sk-or-...
-#   GOOGLE_AI_STUDIO_API_KEY=AIza...
-#   CEREBRAS_API_KEY=csk_...
-#   GATEWAY_API_KEY=pick-any-secret-key
 ```
 
-### Step 3 — Start the gateway
+Set these in `.env`:
+
+- `GATEWAY_API_KEY` (required)
+- At least one provider key (required)
+- `REDIS_URL` (required, default in `.env.example` works with docker compose)
+- `CLOUDFLARE_ACCOUNT_ID` (required only if using Cloudflare)
+
+### 2) Start services
 
 ```bash
 docker compose up --build
 ```
 
-Gateway starts at **http://localhost:8080**
+Gateway: `http://localhost:8080`
 
----
+Optional Redis UI:
 
-## Documentation
+```bash
+docker compose --profile debug up -d redis-commander
+```
 
-Complete project documentation is available in:
+Redis Commander: `http://localhost:8081`
 
-- [docs/README.md](docs/README.md)
+## Local Run (Without Docker)
 
----
+Redis must be running and reachable by `REDIS_URL`.
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+## Authentication and Base URL
+
+- Base URL: `http://localhost:8080/v1`
+- Header: `Authorization: Bearer <GATEWAY_API_KEY>`
+
+All `/v1/*` routes require the gateway API key.
+
+## Endpoints
+
+- `POST /v1/chat/completions` - main inference endpoint (OpenAI-compatible)
+- `GET /v1/models` - list exposed model IDs
+- `GET /v1/providers` - per-token provider quota/health/latency status
+- `GET /health` - liveness
+- `GET /health/ready` - readiness (includes Redis connectivity check)
+
+If no provider is currently available for a request, the gateway returns `503` with `Retry-After: 60`.
 
 ## Usage
 
-### With OpenAI Python SDK (drop-in replacement)
+### OpenAI Python SDK
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:8080/v1",
-    api_key="your-gateway-key",   # matches GATEWAY_API_KEY in .env
+    api_key="your-gateway-api-key",
 )
 
 response = client.chat.completions.create(
-    model="auto",       # gateway picks best available provider
-    messages=[{"role": "user", "content": "Hello!"}]
+    model="auto",
+    messages=[{"role": "user", "content": "Hello from A2LM"}],
 )
+
 print(response.choices[0].message.content)
+print("served_model:", response.model)
 ```
 
-### With curl
+### curl
 
 ```bash
 curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer your-gateway-key" \
+  -H "Authorization: Bearer your-gateway-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "llama-70b",
-    "messages": [{"role": "user", "content": "Hello!"}]
+    "model": "fast",
+    "messages": [{"role": "user", "content": "Say hello in one line"}]
   }'
 ```
 
@@ -85,82 +125,118 @@ curl http://localhost:8080/v1/chat/completions \
 ```python
 stream = client.chat.completions.create(
     model="fast",
-    messages=[{"role": "user", "content": "Count to 10"}],
+    messages=[{"role": "user", "content": "Count from 1 to 5"}],
     stream=True,
 )
 for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
 ```
 
----
+## Routing Aliases
 
-## Available Models (Aliases)
+These aliases map to ordered candidate lists. The scorer then picks the best currently available candidate based on quota, latency, health, and weight.
 
-| Alias | Routes to | Notes |
-|---|---|---|
-| `auto` | Groq Llama 70B → Cerebras Llama 8B → Google Gemma 27B → OpenRouter | Best available |
-| `fast` | Groq Llama 8B → Cerebras Llama 8B → Google Gemma 4B | Lowest latency |
-| `smart` | Cerebras GPT-OSS 120B → Groq Kimi K2 → OpenRouter 405B → Gemini Flash | Highest capability |
-| `llama-8b` | Groq Llama 3.1 8B | |
-| `llama-70b` | Groq Llama 3.3 70B | |
-| `llama-405b` | OpenRouter Llama 3.1 405B (free) | |
-| `deepseek-r1` | OpenRouter DeepSeek R1 (free) | Reasoning model |
-| `gemini-flash` | Google Gemini 2.5 Flash | 1M context |
-| `gemma-27b` | Google Gemma 3 27B | |
-| `qwen-32b` | Groq Qwen3 32B | |
-| `cerebras-llama-8b` | Cerebras Llama 3.1 8B | |
-| `cerebras-gpt-oss-120b` | Cerebras GPT-OSS 120B | High-capability model |
-| `cerebras-qwen-32b` | Cerebras Qwen3 32B | |
+### `auto` priority list
 
----
+1. Groq `llama-3.3-70b-versatile`
+2. Cerebras `llama3.1-8b`
+3. Mistral `mistral-small-latest`
+4. NVIDIA `meta/llama-3.3-70b-instruct`
+5. Cloudflare `@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+6. Google AI Studio `gemma-3-27b-it`
+7. OpenRouter `meta-llama/llama-3.3-70b-instruct:free`
+8. Cohere `command-a-03-2025`
 
-## Endpoints
+### `fast` priority list
 
-```
-POST /v1/chat/completions   — Main inference endpoint (OpenAI-compatible)
-GET  /v1/models             — List all available model aliases
-GET  /v1/providers          — Current quota status per provider token
-GET  /health                — Liveness check
-GET  /health/ready          — Readiness check (Redis connectivity)
-```
+1. Groq `llama-3.1-8b-instant`
+2. Cerebras `llama3.1-8b`
+3. Mistral `mistral-small-latest`
+4. NVIDIA `meta/llama-3.3-70b-instruct`
+5. Cloudflare `@cf/meta/llama-3.2-3b-instruct`
+6. Google AI Studio `gemma-3-4b-it`
+7. OpenRouter `meta-llama/llama-3.2-3b-instruct:free`
+8. Cohere `command-r7b-12-2024`
 
----
+### `smart` priority list
 
-## Run smoke tests
+1. Cerebras `gpt-oss-120b`
+2. Cloudflare `@cf/qwen/qwq-32b`
+3. NVIDIA `deepseek-ai/deepseek-r1`
+4. Mistral `mistral-large-latest`
+5. Groq `moonshotai/kimi-k2-instruct`
+6. OpenRouter `meta-llama/llama-3.1-405b-instruct:free`
+7. Google AI Studio `gemini-2.5-flash`
+8. Cohere `command-a-03-2025`
 
-```bash
-pip install httpx
-python test_gateway.py
-```
+## Current Model IDs
 
----
+Exposed by `GET /v1/models`.
 
-## Multi-key rotation (optional, for higher throughput)
+- Gateway aliases: `auto`, `fast`, `smart`
+- Groq: `llama-8b`, `llama-70b`, `kimi-k2`, `qwen-32b`
+- OpenRouter: `llama-405b`, `deepseek-r1`, `gemma-27b-or`
+- Google AI Studio: `gemini-flash`, `gemma-27b`, `gemma-12b`, `gemma-4b`
+- Cerebras: `cerebras-llama-8b`, `cerebras-gpt-oss-120b`, `cerebras-qwen-32b`
+- Cloudflare: `cf-llama-70b`, `cf-llama-8b`, `cf-qwq-32b`, `cf-deepseek-r1`, `cf-gemma-12b`
+- Cohere: `command-a`, `command-r-plus`, `command-r`, `command-r7b`, `aya-32b`
+- Mistral: `mistral-small`, `mistral-large`, `mistral-nemo`, `mixtral-8x7b`, `codestral`
+- NVIDIA: `nvidia-llama-70b`, `nvidia-llama-405b`, `nvidia-qwen-coder`, `nvidia-phi-4-mini`
 
-Add multiple API keys as comma-separated values to multiply your free quota:
+## Multi-Key Rotation
+
+You can configure multiple API keys per provider (comma-separated) for higher throughput and better quota distribution.
+
+Supported multi-key vars:
+
+- `GROQ_API_KEYS`
+- `OPENROUTER_API_KEYS`
+- `GOOGLE_AI_STUDIO_API_KEYS`
+- `CEREBRAS_API_KEYS`
+- `CLOUDFLARE_API_KEYS`
+- `MISTRAL_API_KEYS`
+- `NVIDIA_API_KEYS`
+
+Single-key vars are also supported and used as fallback:
+
+- `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_AI_STUDIO_API_KEY`, `CEREBRAS_API_KEY`
+- `CLOUDFLARE_API_KEY`, `COHERE_API_KEY`, `MISTRAL_API_KEY`, `NVIDIA_API_KEY`
+
+Example:
 
 ```env
-GROQ_API_KEYS=gsk_key1,gsk_key2,gsk_key3
+GROQ_API_KEYS=gsk_key1,gsk_key2
 OPENROUTER_API_KEYS=sk-or-key1,sk-or-key2
 GOOGLE_AI_STUDIO_API_KEYS=AIza_key1,AIza_key2
 CEREBRAS_API_KEYS=csk_key1,csk_key2
+MISTRAL_API_KEYS=mis_key1,mis_key2
+NVIDIA_API_KEYS=nv_key1,nv_key2
 ```
 
-The gateway will distribute requests across all tokens and track each separately.
+## Smoke Tests
 
----
-
-## Debug: inspect Redis keys
+With gateway running:
 
 ```bash
-docker compose --profile debug up -d redis-commander
-# Open http://localhost:8081 — shows all rl:* rate limit keys live
+python test_gateway.py
 ```
 
----
+Quick manual script:
 
-## Contributing
+```bash
+python test.py
+```
 
-Contributions are welcome. Please read the contribution guide before opening a PR:
+## Notes
 
+- Redis is required for runtime routing/quota checks.
+- `DATABASE_URL` is currently configured but not used in active request paths.
+- CORS is currently open to all origins (`*`).
+
+## Documentation
+
+- [docs/README.md](docs/README.md)
+- [docs/api.md](docs/api.md)
+- [docs/models-and-routing.md](docs/models-and-routing.md)
+- [docs/configuration.md](docs/configuration.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
