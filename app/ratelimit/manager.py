@@ -31,6 +31,57 @@ PROVIDER_LIMITS = {
         "qwen-3-32b":       {"rpm": 30, "daily": 14400},
         "_default":         {"rpm": 30, "daily": 14400},
     },
+    "cloudflare": {
+        # Cloudflare bills by "neurons" not requests — 10,000/day free
+        # Roughly ~500 req/day for 70B, ~2000 req/day for small models
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {"rpm": 60, "daily": 500},
+        "@cf/meta/llama-3.2-3b-instruct":           {"rpm": 60, "daily": 2000},
+        "@cf/qwen/qwq-32b":                          {"rpm": 60, "daily": 300},
+        "@cf/qwen/qwen3-30b-a3b-fp8":               {"rpm": 60, "daily": 500},
+        "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {"rpm": 60, "daily": 500},
+        "@cf/google/gemma-3-12b-it":                {"rpm": 60, "daily": 800},
+        "@cf/mistral/mistral-7b-instruct-v0.2":     {"rpm": 60, "daily": 1500},
+        "@cf/microsoft/phi-4-mini-instruct":        {"rpm": 60, "daily": 1500},
+        "_default":                                 {"rpm": 60, "daily": 500},
+    },
+    "cohere": {
+        # Free tier: 20 RPM shared, 1,000 req/month total across all models
+        "command-a-03-2025":      {"rpm": 20, "daily": 33},   # ~1000/month ÷ 30 days
+        "command-r-08-2024":      {"rpm": 20, "daily": 33},
+        "command-r-plus-08-2024": {"rpm": 20, "daily": 33},
+        "command-r7b-12-2024":    {"rpm": 20, "daily": 33},
+        "c4ai-aya-expanse-32b":   {"rpm": 20, "daily": 33},
+        "c4ai-aya-expanse-8b":    {"rpm": 20, "daily": 33},
+        "_default":               {"rpm": 20, "daily": 33},
+    },
+    "mistral": {
+        # Free tier (Experiment plan): 1 req/sec = ~60 RPM, 500K TPM, 1B tokens/month
+        # ~33,000 req/day assuming avg 1,000 tokens/request
+        "mistral-small-latest":  {"rpm": 60, "daily": 33000},
+        "mistral-medium-latest": {"rpm": 60, "daily": 33000},
+        "mistral-large-latest":  {"rpm": 60, "daily": 33000},
+        "codestral-latest":      {"rpm": 60, "daily": 33000},
+        "open-mixtral-8x7b":     {"rpm": 60, "daily": 33000},
+        "open-mixtral-8x22b":    {"rpm": 60, "daily": 33000},
+        "open-mistral-7b":       {"rpm": 60, "daily": 33000},
+        "open-mistral-nemo":     {"rpm": 60, "daily": 33000},
+        "_default":              {"rpm": 60, "daily": 33000},
+    },
+    "nvidia": {
+        # Free tier: 40 RPM shared across all models
+        # No published daily limit — treating as generous but conservative estimate
+        "meta/llama-3.3-70b-instruct":              {"rpm": 40, "daily": 5000},
+        "meta/llama-3.1-8b-instruct":               {"rpm": 40, "daily": 5000},
+        "meta/llama-3.1-405b-instruct":             {"rpm": 40, "daily": 5000},
+        "deepseek-ai/deepseek-r1":                  {"rpm": 40, "daily": 5000},
+        "qwen/qwen2.5-72b-instruct":                {"rpm": 40, "daily": 5000},
+        "qwen/qwen2.5-coder-32b-instruct":          {"rpm": 40, "daily": 5000},
+        "mistralai/mistral-nemo-12b-instruct":      {"rpm": 40, "daily": 5000},
+        "microsoft/phi-4-mini-instruct":            {"rpm": 40, "daily": 5000},
+        "google/gemma-3-27b-it":                    {"rpm": 40, "daily": 5000},
+        "nvidia/llama-3.1-nemotron-70b-instruct":   {"rpm": 40, "daily": 5000},
+        "_default":                                 {"rpm": 40, "daily": 5000},
+    },
 }
 
 

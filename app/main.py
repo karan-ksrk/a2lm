@@ -21,21 +21,15 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── Startup ──
     log.info("gateway_starting")
     settings = get_settings()
-
     rl_manager = RateLimitManager()
     registry = ModelRegistry()
     engine = RoutingEngine(rl_manager=rl_manager, registry=registry)
-
     app.state.engine = engine
     log.info("gateway_ready", providers=list(engine._token_pools.keys()))
-
     yield
-
-    # ── Shutdown ──
-    await rl_manager.close()
+    await engine.close()    # ← now closes latency + health trackers too
     log.info("gateway_stopped")
 
 

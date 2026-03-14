@@ -16,12 +16,22 @@ class Settings(BaseSettings):
     openrouter_api_keys: str = ""
     google_ai_studio_api_keys: str = ""
     cerebras_api_keys: str = ""
+    cloudflare_api_keys: str = ""
+    cohere_api_key: str = ""
+    mistral_api_keys: str = ""
+    nvidia_api_keys: str = ""
 
     # Compat: allow single-key env vars too
     groq_api_key: str = ""
     openrouter_api_key: str = ""
     google_ai_studio_api_key: str = ""
     cerebras_api_key: str = ""
+    cloudflare_api_key: str = ""
+    cohere_api_key: str = ""
+    mistral_api_key: str = ""
+    nvidia_api_key: str = ""
+
+    cloudflare_account_id: str = ""
 
     log_level: str = "INFO"
 

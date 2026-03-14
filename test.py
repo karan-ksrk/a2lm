@@ -7,7 +7,7 @@ client = OpenAI(
 
 # Test 1: basic
 resp = client.chat.completions.create(
-    model="cerebras-gpt-oss-120b",
+    model="nvidia-phi-4-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(resp.choices[0].message.content)

@@ -57,6 +57,60 @@ MODELS: list[ModelInfo] = [
     # ── Aliases that span providers ───────────────────────────────────────────
     # "auto" and "fast" and "smart" are resolved by the routing engine
     # based on availability — they don't map to a single model entry
+
+    # ── Cloudflare Workers AI ─────────────────────────────────────────────────────
+    ModelInfo(id="cf-llama-70b",   provider_id="cloudflare",
+              native_id="@cf/meta/llama-3.3-70b-instruct-fp8-fast", context_len=131072, weight=85),
+    ModelInfo(id="cf-llama-8b",    provider_id="cloudflare",
+              native_id="@cf/meta/llama-3.2-3b-instruct",           context_len=131072, weight=85),
+    ModelInfo(id="cf-qwq-32b",     provider_id="cloudflare",
+              native_id="@cf/qwen/qwq-32b",                         context_len=32768,  weight=80),
+    ModelInfo(id="cf-deepseek-r1", provider_id="cloudflare",
+              native_id="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", context_len=32768, weight=80),
+    ModelInfo(id="cf-gemma-12b",   provider_id="cloudflare",
+              native_id="@cf/google/gemma-3-12b-it",                context_len=8192,   weight=75),
+    # ModelInfo(id="cf-mistral-7b",  provider_id="cloudflare",
+    #           native_id="@cf/mistral/mistral-7b-instruct-v0.2",     context_len=32768,  weight=70),
+
+    # ── Cohere ────────────────────────────────────────────────────────────────────
+    ModelInfo(id="command-a",      provider_id="cohere",
+              native_id="command-a-03-2025",       context_len=256000, weight=70),
+    ModelInfo(id="command-r-plus", provider_id="cohere",
+              native_id="command-r-plus-08-2024",  context_len=128000, weight=65),
+    ModelInfo(id="command-r",      provider_id="cohere",
+              native_id="command-r-08-2024",       context_len=128000, weight=60),
+    ModelInfo(id="command-r7b",    provider_id="cohere",
+              native_id="command-r7b-12-2024",     context_len=128000, weight=55),
+    ModelInfo(id="aya-32b",        provider_id="cohere",
+              native_id="c4ai-aya-expanse-32b",    context_len=8192,   weight=55),
+
+    # ── Mistral ───────────────────────────────────────────────────────────────────
+    ModelInfo(id="mistral-small",  provider_id="mistral",
+              native_id="mistral-small-latest",  context_len=131072, weight=90),
+    ModelInfo(id="mistral-large",  provider_id="mistral",
+              native_id="mistral-large-latest",  context_len=131072, weight=85),
+    ModelInfo(id="mistral-nemo",   provider_id="mistral",
+              native_id="open-mistral-nemo",      context_len=131072, weight=80),
+    ModelInfo(id="mixtral-8x7b",   provider_id="mistral",
+              native_id="open-mixtral-8x7b",      context_len=32768,  weight=80),
+    ModelInfo(id="codestral",      provider_id="mistral",
+              native_id="codestral-latest",       context_len=262144, weight=85),
+
+    # ── NVIDIA NIM ────────────────────────────────────────────────────────────────
+    ModelInfo(id="nvidia-llama-70b",    provider_id="nvidia",
+              native_id="meta/llama-3.3-70b-instruct",            context_len=131072, weight=88),
+    ModelInfo(id="nvidia-llama-405b",   provider_id="nvidia",
+              native_id="meta/llama-3.1-405b-instruct",           context_len=131072, weight=85),
+    # ModelInfo(id="nvidia-deepseek-r1",  provider_id="nvidia",
+    #           native_id="deepseek-ai/deepseek-r1",                context_len=65536,  weight=88),
+    # ModelInfo(id="nvidia-qwen-72b",     provider_id="nvidia",
+    #           native_id="qwen/qwen2.5-72b-instruct",              context_len=131072, weight=85),
+    ModelInfo(id="nvidia-qwen-coder",   provider_id="nvidia",
+              native_id="qwen/qwen2.5-coder-32b-instruct",        context_len=131072, weight=85),
+    # ModelInfo(id="nvidia-nemotron-70b", provider_id="nvidia",
+    #           native_id="nvidia/llama-3.1-nemotron-70b-instruct", context_len=131072, weight=85),
+    ModelInfo(id="nvidia-phi-4-mini",   provider_id="nvidia",
+              native_id="microsoft/phi-4-mini-instruct",          context_len=131072, weight=80),
 ]
 
 # Priority-ordered provider list for generic aliases
@@ -64,22 +118,34 @@ ALIAS_PRIORITY = {
     "auto": [
         ("groq", "llama-3.3-70b-versatile"),
         ("cerebras", "llama3.1-8b"),
+        ("mistral", "mistral-small-latest"),
+        ("nvidia",           "meta/llama-3.3-70b-instruct"),
+        ("cloudflare", "@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
         ("google_ai_studio", "gemma-3-27b-it"),
         ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+        ("cohere", "command-a-03-2025"),
     ],
 
     "fast": [
         ("groq", "llama-3.1-8b-instant"),
         ("cerebras", "llama3.1-8b"),
+        ("mistral",          "mistral-small-latest"),
+        ("nvidia",           "meta/llama-3.3-70b-instruct"),
+        ("cloudflare", "@cf/meta/llama-3.2-3b-instruct"),
         ("google_ai_studio", "gemma-3-4b-it"),
         ("openrouter", "meta-llama/llama-3.2-3b-instruct:free"),
+        ("cohere", "command-r7b-12-2024"),
     ],
 
     "smart": [
         ("cerebras", "gpt-oss-120b"),
+        ("cloudflare", "@cf/qwen/qwq-32b"),
+        ("nvidia",           "deepseek-ai/deepseek-r1"),
+        ("mistral",          "mistral-large-latest"),
         ("groq", "moonshotai/kimi-k2-instruct"),
         ("openrouter", "meta-llama/llama-3.1-405b-instruct:free"),
         ("google_ai_studio", "gemini-2.5-flash"),
+        ("cohere", "command-a-03-2025"),
     ],
 }
 
@@ -126,11 +192,24 @@ def build_adapter(provider_id: str, api_key: str) -> BaseProviderAdapter:
     from app.adapters.groq import GroqAdapter
     from app.adapters.openrouter import OpenRouterAdapter
     from app.adapters.google_ai_studio import GoogleAIStudioAdapter
-    from app.adapters.cerebras import CerebrasAdapter          # ← add this import
+    from app.adapters.cerebras import CerebrasAdapter
+    from app.adapters.cloudflare import CloudflareAdapter
+    from app.adapters.cohere import CohereAdapter
+    from app.adapters.mistral import MistralAdapter
+    from app.adapters.nvidia import NvidiaAdapter
+
+    if provider_id == "cloudflare":
+        from app.config import get_settings
+        account_id = get_settings().cloudflare_account_id
+        return CloudflareAdapter(api_key=api_key, account_id=account_id)
 
     return {
         "groq": GroqAdapter,
         "openrouter": OpenRouterAdapter,
         "google_ai_studio": GoogleAIStudioAdapter,
         "cerebras": CerebrasAdapter,
+        "cohere": CohereAdapter,
+        "mistral": MistralAdapter,
+        "nvidia": NvidiaAdapter,
+
     }[provider_id](api_key)
