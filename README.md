@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="A2LM Logo" width="180" />
+</p>
+
 # A2LM Gateway — MVP
 
 Single OpenAI-compatible endpoint that routes across **Groq**, **OpenRouter**, **Google AI Studio**, and **Cerebras** with automatic fallback and rate-limit tracking.
