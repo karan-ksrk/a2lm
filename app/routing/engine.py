@@ -2,7 +2,7 @@ import time
 import structlog
 from app.config import get_settings
 from app.ratelimit.manager import RateLimitManager
-from app.registry.models import ModelRegistry, build_adapter, ALIAS_PRIORITY
+from app.registry.models import ModelRegistry, build_adapter
 from app.models.schemas import NormalizedRequest, ChatCompletionResponse
 from app.routing.latency import LatencyTracker
 from app.routing.health import HealthTracker
@@ -83,72 +83,95 @@ class RoutingEngine:
 
     # ── Core select ───────────────────────────────────────────────────────────
 
-    async def select(self, req: NormalizedRequest):
-        """
-        Returns the top-scored available (adapter, token_key, native_model).
-        Raises NoProviderAvailableError if nothing is available.
-        """
-        candidates = self._build_candidates(req.model)
+    async def _rank(self, model: str):
+        """Score and rank all candidates. Raises NoProviderAvailableError if none available."""
+        candidates = self._build_candidates(model)
         ranked = await self.scorer.rank(candidates)
-
         if not ranked:
             raise NoProviderAvailableError(
-                f"All providers exhausted for '{req.model}'. "
+                f"All providers exhausted for '{model}'. "
                 "Retry after 60s or check /v1/providers for quota status."
             )
+        return ranked
 
-        best = ranked[0]
-        log.info(
-            "provider_selected",
-            provider=best.candidate.provider_id,
-            model=best.candidate.native_model,
-            score=best.breakdown["final_score"],
-            p95_ms=best.breakdown["p95_ms"],
-            error_rate=best.breakdown["error_rate"],
-            quota_pct=best.breakdown["daily_pct"],
-        )
-        adapter = build_adapter(best.candidate.provider_id, best.candidate.api_key)
-        return adapter, best.candidate.token_key, best.candidate.native_model
-
-    # ── Execute with observability ────────────────────────────────────────────
+    # ── Execute with fallback retry ───────────────────────────────────────────
 
     async def execute(self, req: NormalizedRequest) -> ChatCompletionResponse:
-        adapter, token_key, native_model = await self.select(req)
-        provider_id = adapter.provider_id
-        start = time.monotonic()
-        try:
-            req_copy = req.model_copy(update={"model": native_model})
-            response = await adapter.complete(req_copy)
+        ranked = await self._rank(req.model)
+        last_error: Exception | None = None
 
-            elapsed_ms = (time.monotonic() - start) * 1000
-            await self.latency.record(provider_id, elapsed_ms)
-            await self.health.record_success(provider_id, elapsed_ms)
-            await self.rl.consume(token_key, provider_id, native_model)
+        for scored in ranked:
+            c = scored.candidate
+            adapter = self._adapters[c.token_key]
+            start = time.monotonic()
+            log.info(
+                "provider_selected",
+                provider=c.provider_id,
+                model=c.native_model,
+                score=scored.breakdown["final_score"],
+                p95_ms=scored.breakdown["p95_ms"],
+                error_rate=scored.breakdown["error_rate"],
+                quota_pct=scored.breakdown["daily_pct"],
+            )
+            try:
+                req_copy = req.model_copy(update={"model": c.native_model})
+                response = await adapter.complete(req_copy)
+                elapsed_ms = (time.monotonic() - start) * 1000
+                await self.latency.record(c.provider_id, elapsed_ms)
+                await self.health.record_success(c.provider_id, elapsed_ms)
+                await self.rl.consume(c.token_key, c.provider_id, c.native_model)
+                return response
+            except Exception as e:
+                elapsed_ms = (time.monotonic() - start) * 1000
+                await self.health.record_failure(c.provider_id)
+                log.error("provider_error", provider=c.provider_id, error=str(e), latency_ms=elapsed_ms)
+                last_error = e
 
-            return response
-
-        except Exception as e:
-            elapsed_ms = (time.monotonic() - start) * 1000
-            await self.health.record_failure(provider_id)
-            log.error("provider_error", provider=provider_id, error=str(e), latency_ms=elapsed_ms)
-            raise
+        raise NoProviderAvailableError(
+            f"All providers failed for '{req.model}'."
+        ) from last_error
 
     async def execute_stream(self, req: NormalizedRequest):
-        adapter, token_key, native_model = await self.select(req)
-        provider_id = adapter.provider_id
-        start = time.monotonic()
-        req_copy = req.model_copy(update={"model": native_model, "stream": True})
-        try:
-            async for chunk in adapter.stream(req_copy):
-                yield chunk
+        ranked = await self._rank(req.model)
+        last_error: Exception | None = None
+
+        for scored in ranked:
+            c = scored.candidate
+            adapter = self._adapters[c.token_key]
+            start = time.monotonic()
+            req_copy = req.model_copy(update={"model": c.native_model, "stream": True})
+
+            stream_iter = adapter.stream(req_copy).__aiter__()
+            try:
+                first = await stream_iter.__anext__()
+            except StopAsyncIteration:
+                # Empty stream — still counts as success
+                elapsed_ms = (time.monotonic() - start) * 1000
+                await self.latency.record(c.provider_id, elapsed_ms)
+                await self.health.record_success(c.provider_id, elapsed_ms)
+                await self.rl.consume(c.token_key, c.provider_id, c.native_model)
+                return
+            except Exception as e:
+                await stream_iter.aclose()
+                elapsed_ms = (time.monotonic() - start) * 1000
+                await self.health.record_failure(c.provider_id)
+                log.error("stream_error", provider=c.provider_id, error=str(e))
+                last_error = e
+                continue
+
+            # Provider responded — committed to this stream, no more fallback
             elapsed_ms = (time.monotonic() - start) * 1000
-            await self.latency.record(provider_id, elapsed_ms)
-            await self.health.record_success(provider_id, elapsed_ms)
-            await self.rl.consume(token_key, provider_id, native_model)
-        except Exception as e:
-            await self.health.record_failure(provider_id)
-            log.error("stream_error", provider=provider_id, error=str(e))
-            raise
+            await self.latency.record(c.provider_id, elapsed_ms)
+            await self.health.record_success(c.provider_id, elapsed_ms)
+            await self.rl.consume(c.token_key, c.provider_id, c.native_model)
+            yield first
+            async for chunk in stream_iter:
+                yield chunk
+            return
+
+        raise NoProviderAvailableError(
+            f"All providers failed for '{req.model}'."
+        ) from last_error
 
     # ── Status endpoint ───────────────────────────────────────────────────────
 
@@ -178,6 +201,8 @@ class RoutingEngine:
         return status
 
     async def close(self):
+        for adapter in self._adapters.values():
+            await adapter.close()
         await self.latency.close()
         await self.health.close()
         await self.rl.close()
