@@ -7,6 +7,7 @@ from app.models.schemas import NormalizedRequest, ChatCompletionResponse
 from app.routing.latency import LatencyTracker
 from app.routing.health import HealthTracker
 from app.routing.scorer import CompositeScorer, ProviderCandidate
+from app.adapters.base import BaseProviderAdapter
 
 log = structlog.get_logger()
 
@@ -40,6 +41,13 @@ class RoutingEngine:
             "cohere":           self._build_pool("cohere"),
             "mistral":          self._build_pool("mistral"),
             "nvidia":           self._build_pool("nvidia"),
+        }
+
+        # Pre-built adapters keyed by token_key — one httpx client per key, reused across requests
+        self._adapters: dict[str, BaseProviderAdapter] = {
+            token_key: build_adapter(provider_id, api_key)
+            for provider_id, pool in self._token_pools.items()
+            for token_key, api_key in pool
         }
 
     def _build_pool(self, provider_id: str) -> list[tuple[str, str]]:
