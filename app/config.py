@@ -3,50 +3,21 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # Gateway
-    secret_key: str = "change-me"
     gateway_api_key: str = "dev-key"
 
-    # DB & Redis
-    database_url: str = "postgresql+asyncpg://a2lm:a2lm@postgres:5432/a2lm"
-    redis_url: str = "redis://redis:6379/0"
-
-    # Provider keys (single or comma-separated for rotation)
-    groq_api_keys: str = ""
-    openrouter_api_keys: str = ""
-    google_ai_studio_api_keys: str = ""
-    cerebras_api_keys: str = ""
-    cloudflare_api_keys: str = ""
-    cohere_api_key: str = ""
-    mistral_api_keys: str = ""
-    nvidia_api_keys: str = ""
-
-    # Compat: allow single-key env vars too
     groq_api_key: str = ""
-    openrouter_api_key: str = ""
-    google_ai_studio_api_key: str = ""
     cerebras_api_key: str = ""
-    cloudflare_api_key: str = ""
-    cohere_api_key: str = ""
+    google_ai_studio_api_key: str = ""
     mistral_api_key: str = ""
+    openrouter_api_key: str = ""
+    cohere_api_key: str = ""
     nvidia_api_key: str = ""
-
+    cloudflare_api_key: str = ""
     cloudflare_account_id: str = ""
-
-    log_level: str = "INFO"
 
     class Config:
         env_file = ".env"
         extra = "ignore"
-
-    def get_keys(self, provider: str) -> list[str]:
-        """Return list of API keys for a provider, supporting both single and multi-key."""
-        multi = getattr(self, f"{provider}_api_keys", "")
-        single = getattr(self, f"{provider}_api_key", "")
-        keys = [k.strip() for k in multi.split(",") if k.strip()]
-        if not keys and single:
-            keys = [single]
-        return keys
 
 
 @lru_cache()

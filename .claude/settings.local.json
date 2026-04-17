@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C g:/project/AI/a2lm show main:.env.example)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/cloudflare.py)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/cohere.py)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/nvidia.py)",
+      "Bash(python -c \"import ast; [ast.parse\\(open\\(f\\).read\\(\\)\\) or print\\(f'OK: {f}'\\) for f in ['scripts/discover_models.py','scripts/lib/fetchers.py','scripts/lib/tester.py','scripts/lib/classifier.py','scripts/lib/aliases_writer.py']]\")",
+      "Bash(python -c ' *)",
+      "Bash(python scripts/discover_models.py --help)",
+      "Bash(venv/Scripts/python.exe scripts/discover_models.py --help)",
+      "Bash(python -c \"import pydantic_settings\")",
+      "Bash(py -3 -c \"import pydantic_settings; print\\('ok'\\)\")",
+      "Bash(py -3 --version)",
+      "Bash(py -3 -m pip show pydantic-settings)",
+      "Bash(py -3 -m pip show fastapi)",
+      "Bash(g:/project/AI/a2lm/venv/Scripts/python.exe scripts/discover_models.py --help)",
+      "Bash(venv/Scripts/python.exe scripts/discover_models.py --skip-test --dry-run)",
+      "Bash(venv/Scripts/python.exe scripts/discover_models.py --skip-test --dry-run --providers groq)",
+      "Bash(venv/Scripts/python.exe scripts/discover_models.py --output scripts/new_models.py)"
+    ]
+  }
+}
