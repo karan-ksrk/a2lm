@@ -10,6 +10,9 @@ from app.providers.cerebras import CerebrasProvider
 from app.providers.google import GoogleProvider
 from app.providers.mistral import MistralProvider
 from app.providers.openrouter import OpenRouterProvider
+from app.providers.cohere import CohereProvider
+from app.providers.nvidia import NvidiaProvider
+from app.providers.cloudflare import CloudflareProvider
 from app.api.routes import router
 
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +31,12 @@ def build_providers(settings) -> dict:
         providers["mistral"] = MistralProvider(settings.mistral_api_key)
     if settings.openrouter_api_key:
         providers["openrouter"] = OpenRouterProvider(settings.openrouter_api_key)
+    if settings.cohere_api_key:
+        providers["cohere"] = CohereProvider(settings.cohere_api_key)
+    if settings.nvidia_api_key:
+        providers["nvidia"] = NvidiaProvider(settings.nvidia_api_key)
+    if settings.cloudflare_api_key and settings.cloudflare_account_id:
+        providers["cloudflare"] = CloudflareProvider(settings.cloudflare_api_key, settings.cloudflare_account_id)
     return providers
 
 

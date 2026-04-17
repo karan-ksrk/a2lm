@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C g:/project/AI/a2lm show main:.env.example)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/cloudflare.py)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/cohere.py)",
+      "Bash(git -C g:/project/AI/a2lm show main:app/adapters/nvidia.py)"
+    ]
+  }
+}
