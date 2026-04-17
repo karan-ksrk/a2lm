@@ -32,6 +32,8 @@ PRIORITIES: dict[str, list[tuple[str, str]]] = {
         ("openrouter",  "meta-llama/llama-3.1-405b-instruct:free"),
     ],
     "coding": [
+        ("nvidia",      "qwen/qwen3-coder-480b-a35b-instruct"),
+        ("nvidia",      "mistralai/devstral-2-123b-instruct-2512"),
         ("mistral",     "codestral-latest"),
         ("groq",        "moonshotai/kimi-k2-instruct"),
         ("nvidia",      "qwen/qwen2.5-coder-32b-instruct"),
